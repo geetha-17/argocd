@@ -55,7 +55,7 @@ pipeline {
                     
                     // Update image in deployment.yaml
                     sh '''
-                    cd argocd/manifests/hello-world-python
+                    cd argocd/manifests
                     sed -i "s|image: .*|image: $IMAGE_NAME:latest|" deployment.yaml
                     git config --global user.email "jenkins@localhost"
                     git config --global user.name "Jenkins"
