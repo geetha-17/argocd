@@ -15,7 +15,7 @@ pipeline {
             steps {
                 script {
                     sh 'rm -rf hello-world-python || true'
-                    sh 'git clone https://geetha-17:${GIT_PASSWORD}@github.com/geetha-17/hello-world-python.git'
+                    sh 'git clone https://geetha-17:${GIT_PASSWORD}@github.com/geetha-17/argocd.git'
                 }
             }
         }
