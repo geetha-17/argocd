@@ -14,8 +14,9 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 script {
+                    // Remove any previous copies of the repository to ensure a fresh clone
                     sh 'rm -rf hello-world-python || true'
-                    sh 'git clone https://geetha-17:${GIT_PASSWORD}@github.com/geetha-17/argocd.git'
+                    sh 'git clone https://github.com/geetha-17/argocd.git'
                 }
             }
         }
@@ -23,6 +24,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
+                    // Build the Docker image with the specified tag
                     sh 'docker build -t $IMAGE_NAME:latest hello-world-python'
                 }
             }
@@ -32,6 +34,7 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: '41380629-0631-44da-ba4d-add2b73c5926', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     script {
+                        // Login to Docker Hub using the credentials stored in Jenkins
                         sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
                     }
                 }
@@ -41,6 +44,7 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
+                    // Push the Docker image to the Docker Hub
                     sh 'docker push $IMAGE_NAME:latest'
                 }
             }
@@ -49,20 +53,18 @@ pipeline {
         stage('Update Kubernetes Manifests') {
             steps {
                 script {
-                    // Clone the ArgoCD repo
-                    sh 'rm -rf argocd || true'
-                    sh 'git clone $GIT_REPO'
-                    
-                    // Update image in deployment.yaml
-                    sh '''
-                    cd argocd/manifests
-                    sed -i "s|image: .*|image: $IMAGE_NAME:latest|" deployment.yaml
-                    git config --global user.email "jenkins@localhost"
-                    git config --global user.name "Jenkins"
-                    git add deployment.yaml
-                    git commit -m "Updated image to $IMAGE_NAME:latest"
-                    git push origin $GIT_BRANCH
-                    '''
+                    // Change to the ArgoCD repository directory
+                    dir('argocd/manifests') {
+                        // Update the image reference in the deployment.yaml file
+                        sh 'sed -i "s|image: .*|image: $IMAGE_NAME:latest|" deployment.yaml'
+                        // Configure Git to use Jenkins as the user
+                        sh 'git config --global user.email "jenkins@localhost"'
+                        sh 'git config --global user.name "Jenkins"'
+                        // Commit and push the changes to the repository
+                        sh 'git add deployment.yaml'
+                        sh 'git commit -m "Updated image to $IMAGE_NAME:latest"'
+                        sh 'git push origin $GIT_BRANCH'
+                    }
                 }
             }
         }
@@ -70,6 +72,7 @@ pipeline {
         stage('Trigger ArgoCD Sync') {
             steps {
                 script {
+                    // Trigger the sync for the ArgoCD application to deploy the updated image
                     sh '''
                     curl -X POST "$ARGOCD_SERVER/api/v1/applications/hello-world-python/sync" \
                     -H "Authorization: Bearer $ARGOCD_AUTH_TOKEN"
