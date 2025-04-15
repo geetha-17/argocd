@@ -2,23 +2,24 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "geetha-17/hello-world-python"
+        IMAGE_NAME = "10.67.60.223:30002/yotta-app/hello-world-python"
         IMAGE_TAG = "latest"
         HARBOR_CREDENTIALS_ID = "harbor-credentials"
         GITHUB_CREDENTIALS_ID = "github-credentials"
-        ARGOCD_SERVER = "localhost:8080"
-        ARGOCD_APP_NAME = "hello-world-python"
+        ARGOCD_SERVER = "10.67.60.223:32007"
+        ARGOCD_APP_NAME = "yotta-app"
     }
 
     stages {
         stage('Clone Repository') {
             steps {
                 script {
-                    // Clean up the workspace to prevent conflicts
                     sh 'rm -rf argocd'
-                    
+
                     withCredentials([usernamePassword(credentialsId: GITHUB_CREDENTIALS_ID, usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
-                        sh 'git clone https://$GIT_USER:$GIT_PASS@github.com/geetha-17/argocd.git'
+                        sh '''
+                            git clone https://$GIT_USER:$GIT_PASS@github.com/geetha-17/argocd.git
+                        '''
                     }
                 }
             }
@@ -27,15 +28,19 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh "docker build -t $IMAGE_NAME:$IMAGE_TAG ."
+                    sh '''
+                        docker build -t $IMAGE_NAME:$IMAGE_TAG .
+                    '''
                 }
             }
         }
 
-        stage('Login to Docker Hub') {
+        stage('Login to Harbor') {
             steps {
                 withCredentials([usernamePassword(credentialsId: HARBOR_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login 10.67.60.223:30002 -u "$DOCKER_USER" --password-stdin
+                    '''
                 }
             }
         }
@@ -43,7 +48,9 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
-                    sh "docker push $IMAGE_NAME:$IMAGE_TAG"
+                    sh '''
+                        docker push $IMAGE_NAME:$IMAGE_TAG
+                    '''
                 }
             }
         }
@@ -52,10 +59,10 @@ pipeline {
             steps {
                 script {
                     withCredentials([string(credentialsId: 'argocd-auth-token', variable: 'ARGOCD_AUTH_TOKEN')]) {
-                        sh """
-                            curl -k -X POST $ARGOCD_SERVER/api/v1/applications/$ARGOCD_APP_NAME/sync \
+                        sh '''
+                            curl -k -X POST https://$ARGOCD_SERVER/api/v1/applications/$ARGOCD_APP_NAME/sync \
                             -H "Authorization: Bearer $ARGOCD_AUTH_TOKEN"
-                        """
+                        '''
                     }
                 }
             }
