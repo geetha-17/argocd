@@ -5,7 +5,7 @@ pipeline {
         IMAGE_NAME = "geetha-17/hello-world-python"
         IMAGE_TAG = "latest"
         DOCKER_CREDENTIALS_ID = "41380629-0631-44da-ba4d-add2b73c5926"
-        GITHUB_CREDENTIALS_ID = "b213f9bd-9d94-4318-aec9-aabb24118bfd"
+        GITHUB_CREDENTIALS_ID = "github-credentials"
         ARGOCD_SERVER = "localhost:8080"
         ARGOCD_APP_NAME = "hello-world-python"
     }
