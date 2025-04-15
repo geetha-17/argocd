@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "geetha-17/hello-world-python"
         IMAGE_TAG = "latest"
-        DOCKER_CREDENTIALS_ID = "41380629-0631-44da-ba4d-add2b73c5926"
+        HARBOR_CREDENTIALS_ID = "harbor-credentials"
         GITHUB_CREDENTIALS_ID = "github-credentials"
         ARGOCD_SERVER = "localhost:8080"
         ARGOCD_APP_NAME = "hello-world-python"
@@ -32,9 +32,9 @@ pipeline {
             }
         }
 
-        stage('Login to Docker Hub') {
+        stage('Login to Harbor') {
             steps {
-                withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([usernamePassword(credentialsId: HARBOR_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
                 }
             }
